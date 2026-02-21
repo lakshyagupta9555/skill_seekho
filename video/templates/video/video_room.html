@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Video Call - Skill Swap{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-dark-card rounded-lg shadow-xl border border-dark-border p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-white">
+                Video Call with 
+                {% if call.caller == request.user %}
+                    {{ call.receiver.username }}
+                {% else %}
+                    {{ call.caller.username }}
+                {% endif %}
+            </h2>
+            <button id="end-call" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md">
+                End Call
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-dark-bg rounded-lg aspect-video flex items-center justify-center relative">
+                <video id="remote-video" autoplay playsinline class="w-full h-full rounded-lg"></video>
+                <p class="absolute text-gray-400">Remote Video</p>
+            </div>
+            <div class="bg-dark-bg rounded-lg aspect-video flex items-center justify-center relative">
+                <video id="local-video" autoplay muted playsinline class="w-full h-full rounded-lg"></video>
+                <p class="absolute text-gray-400">Your Video</p>
+            </div>
+        </div>
+        
+        <div class="mt-6 flex justify-center space-x-4">
+            <button id="toggle-audio" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md">
+                Mute Audio
+            </button>
+            <button id="toggle-video" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md">
+                Stop Video
+            </button>
+        </div>
+        
+        <div class="mt-4 p-4 bg-yellow-900 border border-yellow-700 rounded-lg">
+            <p class="text-yellow-200 text-sm">
+                <strong>Note:</strong> For full video calling functionality, you would need to integrate a WebRTC service like 
+                Agora, Twilio, or implement a custom TURN/STUN server setup.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let localStream;
+    let audioEnabled = true;
+    let videoEnabled = true;
+
+    // Get user media
+    async function startLocalStream() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            document.getElementById('local-video').srcObject = localStream;
+        } catch (error) {
+            console.error('Error accessing media devices:', error);
+            alert('Unable to access camera/microphone');
+        }
+    }
+
+    // Toggle audio
+    document.getElementById('toggle-audio').onclick = function() {
+        audioEnabled = !audioEnabled;
+        localStream.getAudioTracks()[0].enabled = audioEnabled;
+        this.textContent = audioEnabled ? 'Mute Audio' : 'Unmute Audio';
+        this.classList.toggle('bg-red-600');
+    };
+
+    // Toggle video
+    document.getElementById('toggle-video').onclick = function() {
+        videoEnabled = !videoEnabled;
+        localStream.getVideoTracks()[0].enabled = videoEnabled;
+        this.textContent = videoEnabled ? 'Stop Video' : 'Start Video';
+        this.classList.toggle('bg-red-600');
+    };
+
+    // End call
+    document.getElementById('end-call').onclick = function() {
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+        }
+        window.location.href = "{% url 'video:call_list' %}";
+    };
+
+    // Start on load
+    startLocalStream();
+</script>
+{% endblock %}
