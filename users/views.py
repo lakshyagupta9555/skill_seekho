@@ -20,6 +20,18 @@ def register(request):
 
 @login_required
 def profile(request):
+    teaching_skills = request.user.skills.filter(can_teach=True)
+    learning_interests = request.user.skills.filter(want_to_learn=True)
+    
+    context = {
+        'profile_user': request.user,
+        'teaching_skills': teaching_skills,
+        'learning_interests': learning_interests,
+    }
+    return render(request, 'users/profile.html', context)
+
+@login_required
+def edit_profile(request):
     if request.method == 'POST':
         u_form = UserUpdateForm(request.POST, instance=request.user)
         p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
@@ -34,9 +46,9 @@ def profile(request):
     
     context = {
         'u_form': u_form,
-        'p_form': p_form
+        'p_form': p_form,
     }
-    return render(request, 'users/profile.html', context)
+    return render(request, 'users/edit_profile.html', context)
 
 @login_required
 def add_skill(request):

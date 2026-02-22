@@ -1,5 +1,13 @@
+# Core Django Framework
 Django>=4.2,<5.0
+
+# WebSocket and Real-time Communication
 channels>=4.0.0
 daphne>=4.0.0
-pillow>=10.0.0
-djangorestframework>=3.14.0
+channels-redis>=4.0.0
+
+# Image Processing
+Pillow>=10.0.0
+
+# ASGI Server Support
+asgiref>=3.6.0

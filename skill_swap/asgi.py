@@ -11,7 +11,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'skill_swap.settings')
 
 django_asgi_app = get_asgi_application()
 
-from chat.routing import websocket_urlpatterns
+from chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
+from video.routing import websocket_urlpatterns as video_websocket_urlpatterns
+
+# Combine all websocket URL patterns
+websocket_urlpatterns = chat_websocket_urlpatterns + video_websocket_urlpatterns
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,

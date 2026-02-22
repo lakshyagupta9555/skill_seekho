@@ -12,7 +12,7 @@ def chat_list(request):
 @login_required
 def chat_room(request, room_name):
     room = get_object_or_404(ChatRoom, name=room_name, participants=request.user)
-    messages = room.messages.all().select_related('sender')
+    chat_messages = room.messages.all().select_related('sender')
     
     # Mark messages as read
     Message.objects.filter(room=room).exclude(sender=request.user).update(is_read=True)
@@ -22,7 +22,7 @@ def chat_room(request, room_name):
     
     context = {
         'room': room,
-        'messages': messages,
+        'chat_messages': chat_messages,
         'other_user': other_user,
     }
     return render(request, 'chat/chat_room.html', context)

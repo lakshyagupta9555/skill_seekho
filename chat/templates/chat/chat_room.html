@@ -19,7 +19,7 @@
         
         <!-- Messages -->
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
-            {% for message in messages %}
+            {% for message in chat_messages %}
             <div class="flex {% if message.sender == request.user %}justify-end{% else %}justify-start{% endif %}">
                 <div class="max-w-xs lg:max-w-md">
                     <div class="{% if message.sender == request.user %}bg-blue-600{% else %}bg-dark-bg border border-dark-border{% endif %} rounded-lg p-3">

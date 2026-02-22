@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.http import JsonResponse
+from django.utils import timezone
 from .models import VideoCall
 import uuid
 
@@ -36,6 +38,10 @@ def video_room(request, room_id):
     if call.caller != request.user and call.receiver != request.user:
         return redirect('dashboard:home')
     
+    # Don't allow joining ended calls
+    if call.status == 'ended':
+        return redirect('video:call_list')
+    
     if call.status == 'calling':
         call.status = 'active'
         call.save()
@@ -45,3 +51,25 @@ def video_room(request, room_id):
         'room_id': room_id,
     }
     return render(request, 'video/video_room.html', context)
+
+@login_required
+def end_call(request, room_id):
+    call = get_object_or_404(VideoCall, room_id=room_id)
+    
+    # Check if user is participant
+    if call.caller != request.user and call.receiver != request.user:
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+    
+    # Only end if not already ended
+    if call.status != 'ended':
+        call.status = 'ended'
+        call.ended_at = timezone.now()
+        
+        # Calculate duration in seconds
+        if call.started_at:
+            duration = (call.ended_at - call.started_at).total_seconds()
+            call.duration = int(duration)
+        
+        call.save()
+    
+    return JsonResponse({'status': 'success'})
