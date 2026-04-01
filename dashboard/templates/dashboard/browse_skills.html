@@ -30,6 +30,21 @@
         <div class="bg-dark-card rounded-lg shadow-xl p-6 border border-dark-border hover:border-blue-500 transition">
             <h3 class="text-xl font-bold text-white mb-2">{{ skill.name }}</h3>
             <p class="text-sm text-gray-400 mb-2">by {{ skill.user.username }}</p>
+
+            {% if skill.rating_summary %}
+            <div class="mb-3 text-xs text-gray-300 space-y-1">
+                <p>
+                    Avg Teaching: <span class="text-yellow-300 font-semibold">{{ skill.rating_summary.avg_teaching }}/5</span>
+                </p>
+                <p>
+                    Avg Learning: <span class="text-yellow-300 font-semibold">{{ skill.rating_summary.avg_learning }}/5</span>
+                    <span class="text-gray-500">({{ skill.rating_summary.total_ratings }} ratings)</span>
+                </p>
+            </div>
+            {% else %}
+            <p class="text-xs text-gray-500 mb-3">No ratings yet</p>
+            {% endif %}
+
             <p class="text-sm text-gray-300 mb-4">{{ skill.description|truncatewords:15 }}</p>
             
             <div class="flex flex-wrap gap-2 mb-4">

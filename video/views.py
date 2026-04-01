@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import VideoCall
+from django.contrib import messages
+from .models import VideoCall, VideoCallRating
 import uuid
 
 @login_required
@@ -12,7 +13,19 @@ def video_call_list(request):
     calls = VideoCall.objects.filter(
         Q(caller=request.user) | Q(receiver=request.user)
     ).order_by('-started_at')[:20]
-    return render(request, 'video/call_list.html', {'calls': calls})
+
+    rated_call_ids = set(
+        VideoCallRating.objects.filter(rater=request.user).values_list('call_id', flat=True)
+    )
+
+    return render(
+        request,
+        'video/call_list.html',
+        {
+            'calls': calls,
+            'rated_call_ids': rated_call_ids,
+        },
+    )
 
 @login_required
 def start_call(request, user_id):
@@ -73,3 +86,46 @@ def end_call(request, room_id):
         call.save()
     
     return JsonResponse({'status': 'success'})
+
+
+@login_required
+def submit_call_rating(request, room_id):
+    if request.method != 'POST':
+        return redirect('video:call_list')
+
+    call = get_object_or_404(VideoCall, room_id=room_id)
+
+    # Check if user is participant
+    if call.caller != request.user and call.receiver != request.user:
+        messages.error(request, 'You are not allowed to rate this call.')
+        return redirect('video:call_list')
+
+    if call.status != 'ended':
+        messages.error(request, 'You can only rate calls after they are ended.')
+        return redirect('video:call_list')
+
+    rated_user = call.receiver if call.caller == request.user else call.caller
+
+    try:
+        teaching_rating = int(request.POST.get('teaching_rating', 0))
+        learning_rating = int(request.POST.get('learning_rating', 0))
+    except (TypeError, ValueError):
+        messages.error(request, 'Please choose valid ratings.')
+        return redirect('video:call_list')
+
+    if teaching_rating not in [1, 2, 3, 4, 5] or learning_rating not in [1, 2, 3, 4, 5]:
+        messages.error(request, 'Ratings must be between 1 and 5.')
+        return redirect('video:call_list')
+
+    VideoCallRating.objects.update_or_create(
+        call=call,
+        rater=request.user,
+        defaults={
+            'rated_user': rated_user,
+            'teaching_rating': teaching_rating,
+            'learning_rating': learning_rating,
+        },
+    )
+
+    messages.success(request, f'You rated {rated_user.username} successfully.')
+    return redirect('video:call_list')

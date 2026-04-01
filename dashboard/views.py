@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Avg, Count
 from django.utils import timezone
 from users.models import Skill
+from video.models import VideoCallRating
 from .models import (SkillMatch, Assignment, AssignmentQuestion, AssignmentSubmission,
                       SubmissionAnswer, Exam, ExamQuestion, ExamAttempt, ExamAnswer)
 
@@ -52,6 +53,24 @@ def browse_skills(request):
             connected_users.add(match.matched_user.id)
         else:
             connected_users.add(match.user.id)
+
+    user_ids = list(skills.values_list('user_id', flat=True).distinct())
+    rating_rows = VideoCallRating.objects.filter(rated_user_id__in=user_ids).values('rated_user_id').annotate(
+        avg_teaching=Avg('teaching_rating'),
+        avg_learning=Avg('learning_rating'),
+        total_ratings=Count('id'),
+    )
+    user_ratings = {
+        row['rated_user_id']: {
+            'avg_teaching': round(row['avg_teaching'], 1) if row['avg_teaching'] is not None else None,
+            'avg_learning': round(row['avg_learning'], 1) if row['avg_learning'] is not None else None,
+            'total_ratings': row['total_ratings'],
+        }
+        for row in rating_rows
+    }
+
+    for skill in skills:
+        skill.rating_summary = user_ratings.get(skill.user_id)
     
     context = {
         'skills': skills,
